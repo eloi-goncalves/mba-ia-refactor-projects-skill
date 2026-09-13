@@ -95,8 +95,104 @@ A skill vive em [code-smells-project/.claude/skills/refactor-arch/](code-smells-
 
 ## C) Resultados
 
-> _A preencher na Fase 3/4 (ver [docs/05-fase-3-execucao-nos-projetos.md](docs/05-fase-3-execucao-nos-projetos.md))._ Resumo dos relatórios (`reports/audit-project-{1,2,3}.md`), comparação antes/depois, checklist de validação preenchido e logs das aplicações rodando.
+### Resumo dos relatórios de auditoria (Fase 2)
+
+| Projeto | Findings | CRITICAL | HIGH | MEDIUM | LOW | Relatório |
+|---------|:---:|:---:|:---:|:---:|:---:|-----------|
+| 1 — `code-smells-project` | 9 | 3 | 2 | 2 | 2 | [reports/audit-project-1.md](reports/audit-project-1.md) |
+| 2 — `ecommerce-api-legacy` | 10 | 3 | 3 | 2 | 2 | [reports/audit-project-2.md](reports/audit-project-2.md) |
+| 3 — `task-manager-api` | 8 | 1 | 2 | 3 | 2 | [reports/audit-project-3.md](reports/audit-project-3.md) |
+
+### Antes / depois da estrutura
+
+**Projeto 1 (Flask, monólito → MVC):**
+```
+ANTES: app.py + controllers.py + models.py + database.py (tudo misturado)
+DEPOIS: app.py (composition root) + src/{config,database,models,controllers,services,views,middlewares}
+```
+
+**Projeto 2 (Express, God Class → MVC):**
+```
+ANTES: src/{app.js, AppManager.js (DB+rotas+regra), utils.js (config+estado global+badCrypto)}
+DEPOIS: src/{config,database,models,controllers,routes,services,middlewares,utils} + app.js (composition root)
+```
+
+**Projeto 3 (Flask/SQLAlchemy, parcial → melhorado):**
+```
+ANTES: models/ + routes/ + services/ + utils/ (com MD5, senha exposta, N+1, regra na rota)
+DEPOIS: + config/settings.py; hashing seguro; serializer no model (overdue/relações); N+1 corrigido; SMTP via env
+```
+
+### Checklist de validação por projeto
+
+| Item | P1 | P2 | P3 |
+|------|:--:|:--:|:--:|
+| Fase 1 — linguagem/framework/domínio/arquivos corretos | ✅ | ✅ | ✅ |
+| Fase 2 — template, arquivo:linha, ordenado, ≥ 5 findings, deprecated, confirmação | ✅ | ✅ | ✅ |
+| Fase 3 — estrutura MVC, config sem hardcoded, models, views/rotas, controllers, erro central, entry point | ✅ | ✅ | ✅ |
+| Fase 3 — **aplicação inicia sem erros** | ✅ | ⏳ pendente (npm) | ✅ |
+| Fase 3 — **endpoints originais respondem** | ✅ | ⏳ pendente (npm) | ✅ |
+
+> **Projeto 2:** o código foi refatorado para MVC e passou na verificação de sintaxe (`node --check`) em 17/17 arquivos, mas a validação de **boot + endpoints** depende de `npm install` (bloqueado por rede no ambiente atual). Ver [docs/08-pendencias.md](docs/08-pendencias.md).
+
+### Logs das aplicações rodando (após refatoração)
+
+**Projeto 1** — `GET /health`:
+```json
+{"counts":{"pedidos":0,"produtos":10,"usuarios":3},"database":"connected","status":"ok","versao":"1.0.0"}
+```
+`POST /login` (senha com hash) retorna 200; senha errada retorna 401; `GET /usuarios` não expõe `senha`.
+
+**Projeto 3** — `GET /tasks` (com `overdue` e relações, sem N+1):
+```json
+[{"id":1,"title":"Primeira task","overdue":true,"user_name":"Joao","category_name":"Backend", ...}]
+```
+`GET /users` não expõe `password`; `GET /reports/summary` responde com estatísticas agregadas.
+
+### Observações sobre stacks diferentes
+
+- **Mesma skill, transformações adaptadas:** no monólito Flask (P1) a skill criou todas as camadas do zero; no Express (P2) quebrou a God Class e trocou callbacks por async/await; no Flask/SQLAlchemy já organizado (P3) fez melhorias cirúrgicas (segurança, N+1, serializer) sem reescrever.
+- **Agnosticismo confirmado:** detecção de stack e catálogo/playbook funcionaram nas 3 bases com níveis de organização distintos.
 
 ## D) Como Executar
 
-> _A preencher na Fase 4 (ver [docs/06-fase-4-documentacao-e-entrega.md](docs/06-fase-4-documentacao-e-entrega.md))._ Pré-requisitos (Claude CLI), comandos por projeto (`claude "/refactor-arch"`), validação e ordem sugerida.
+### Pré-requisitos
+- **Claude CLI** instalado e autenticado (`claude --version`).
+- **Python 3.x** + `pip`/`venv` (Projetos 1 e 3).
+- **Node.js** + `npm` (Projeto 2).
+
+### Executar a skill em cada projeto (Claude CLI)
+```bash
+# Projeto 1
+cd code-smells-project
+claude "/refactor-arch"
+
+# Projeto 2 (a skill já está copiada em .claude/skills/refactor-arch/)
+cd ../ecommerce-api-legacy
+claude "/refactor-arch"
+
+# Projeto 3 (idem)
+cd ../task-manager-api
+claude "/refactor-arch"
+```
+> A Fase 2 pausa e pede confirmação antes de qualquer alteração. Salve o relatório em `reports/audit-project-{1,2,3}.md`.
+
+### Rodar e validar as aplicações refatoradas
+```bash
+# Projeto 1 (Flask)
+cd code-smells-project && python3 -m venv .venv && .venv/bin/pip install -r requirements.txt
+.venv/bin/python app.py         # http://localhost:5000
+curl -s localhost:5000/health
+
+# Projeto 2 (Express) — requer acesso à rede para instalar deps
+cd ../ecommerce-api-legacy && npm install && npm start   # http://localhost:3000
+
+# Projeto 3 (Flask/SQLAlchemy)
+cd ../task-manager-api && python3 -m venv .venv && .venv/bin/pip install -r requirements.txt
+.venv/bin/python app.py         # http://localhost:5000
+curl -s localhost:5000/tasks
+```
+> Os dois apps Flask usam a porta 5000 — rode um de cada vez.
+
+### Ordem de execução sugerida
+1. Análise manual (seção A) → 2. Criar a skill (seção B) → 3. Executar nos 3 projetos → 4. Documentar/validar (seções C/D). Detalhes por fase em [docs/](docs/01-analise-do-desafio.md).

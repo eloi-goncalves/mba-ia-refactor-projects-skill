@@ -142,11 +142,61 @@ Analisar profundamente (ULTRATHINK) o prompt [00-prompt-orquestrador.md](00-prom
 
 > Critérios de aceite Projeto 1: A1 ✅ | A2 ✅ (9 ≥ 5) | A3 ✅ (3 CRITICAL) | A4 ✅.
 
-## 10. Próximos passos
+## 10. Execução da Fase 3 — Projeto 2 `ecommerce-api-legacy` (2026-09-13)
 
-1. **Projeto 1 concluído e validado.** Próximo: **Fase 3 no Projeto 2** (`ecommerce-api-legacy`, Node/Express) — copiar a skill, executar, salvar `reports/audit-project-2.md`, refatorar e validar. **Bloqueio:** requer `npm install` (rede/proxy) para validar o boot.
-2. Depois: **Fase 3 no Projeto 3** (`task-manager-api`, Flask/SQLAlchemy) — copiar a skill, executar, salvar `reports/audit-project-3.md`, melhorar sem quebrar endpoints.
-3. **Fase 4:** preencher README seções **C/D**, checklist final e push do fork.
+**Status: refatorado; boot/endpoints PENDENTE (rede).** Skill copiada para o projeto.
+
+- **Fase 1:** Node.js + Express 4.18; domínio LMS/checkout; tabelas `users`, `courses`, `enrollments`, `payments`, `audit_logs`.
+- **Fase 2:** [reports/audit-project-2.md](../reports/audit-project-2.md) — **10 findings** (3 CRITICAL, 3 HIGH, 2 MEDIUM, 2 LOW) + API deprecated (callbacks sqlite3).
+- **Fase 3:** God Class `AppManager` + `utils.js` quebrados em `src/{config,database,models,controllers,routes,services,middlewares,utils}` + `app.js` composition root.
+  - T1 — config/segredos via env (sem `pk_live`/senha hardcoded).
+  - T5 — nunca loga número de cartão nem chave (PCI); cartão mascarado.
+  - T3/T6 — camadas + injeção de dependência (fim do estado global `globalCache`).
+  - T4 — `badCrypto` → `crypto.scryptSync` com salt.
+  - T9 — callbacks → wrapper Promise + async/await.
+  - T8 — N+1 do relatório financeiro → consultas agregadas (JOIN/GROUP BY).
+  - T12 — deleção de usuário transacional (sem órfãos).
+- **Validação:** `node --check` OK em **17/17** arquivos. **Boot + endpoints pendentes** por falta de `npm install` (rede/proxy). Ver [docs/08-pendencias.md](08-pendencias.md).
+
+> Critérios Projeto 2: A1 ✅ | A2 ✅ (10 ≥ 5) | A3 ✅ (3 CRITICAL) | A4 ⏳ pendente (rede).
+
+## 11. Execução da Fase 3 — Projeto 3 `task-manager-api` (2026-09-13)
+
+**Status: concluída e validada.** Skill copiada para o projeto.
+
+- **Fase 1:** Python + Flask + SQLAlchemy; domínio Task Manager; tabelas `tasks`, `users`, `categories`.
+- **Fase 2:** [reports/audit-project-3.md](../reports/audit-project-3.md) — **8 findings** (1 CRITICAL, 2 HIGH, 3 MEDIUM, 2 LOW) + APIs deprecated (`datetime.utcnow()`, `Query.get()`).
+- **Fase 3 (melhorias sem quebrar endpoints):**
+  - T4 — hashing MD5 → `werkzeug` (`generate/check_password_hash`).
+  - T5 — `password` removido de `User.to_dict()` (não exposto em `/users`).
+  - T1 — `config/settings.py` via env; `SECRET_KEY`/`DEBUG`/host de ambiente; SMTP via env.
+  - T7 — `Task.is_overdue` + serializer `to_dict(with_relations=...)`; rotas enxutas.
+  - T8 — N+1 de `user_productivity` → agregação `GROUP BY`.
+  - T14 — `except:` nu → exceções específicas; API deprecated `utcnow()` isolada em helper timezone-safe.
+- **Validação (boot + endpoints):** app sobe; `GET /`, `/health`, `POST /categories`, `POST /users` (senha não exposta), `POST /tasks` (`overdue` calculado), `GET /tasks` (relações), `GET /reports/summary` (sem N+1) — todos ✅.
+
+> Critérios Projeto 3: A1 ✅ | A2 ✅ (8 ≥ 5) | A3 ✅ (1 CRITICAL) | A4 ✅.
+
+## 12. Fase 4 — Documentação e pendências
+
+- **README** preenchido com as 4 seções: A) Análise Manual, B) Construção da Skill, C) Resultados (findings por severidade, antes/depois, checklist, logs), D) Como Executar.
+- **Plano de pendências** criado em [docs/08-pendencias.md](08-pendencias.md).
+
+## 13. Situação dos critérios de aceite (3/3)
+
+| Critério | P1 | P2 | P3 |
+|----------|:--:|:--:|:--:|
+| A1 — Fase 1 detecta stack | ✅ | ✅ | ✅ |
+| A2 — Fase 2 ≥ 5 findings | ✅ (9) | ✅ (10) | ✅ (8) |
+| A3 — ≥ 1 CRITICAL/HIGH | ✅ | ✅ | ✅ |
+| A4 — app funciona pós-refatoração | ✅ | ⏳ pendente (rede/npm) | ✅ |
+
+## 14. Próximos passos (o que faltou)
+
+Ver [docs/08-pendencias.md](08-pendencias.md). Resumo:
+1. **Validar boot do Projeto 2** após `npm install` (bloqueado por rede).
+2. **Push do fork** (`git push origin main`).
+3. Opcionais: rodar `claude "/refactor-arch"` de fato; screenshots; eliminar deprecations remanescentes do P3; testes.
 
 ## 11. Sugestão de mensagem de commit (pt-BR, Conventional Commits)
 

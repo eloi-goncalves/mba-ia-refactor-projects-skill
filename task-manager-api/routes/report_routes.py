@@ -51,14 +51,19 @@ def summary_report():
     ).count()
 
     users = User.query.all()
+    # Evita N+1: agrega total e concluídas por usuário em uma única query.
+    rows = db.session.query(
+        Task.user_id,
+        db.func.count(Task.id),
+        db.func.sum(db.case((Task.status == 'done', 1), else_=0)),
+    ).group_by(Task.user_id).all()
+    stats_by_user = {
+        user_id: (int(total or 0), int(done or 0))
+        for user_id, total, done in rows
+    }
     user_stats = []
     for u in users:
-        user_tasks = Task.query.filter_by(user_id=u.id).all()
-        total = len(user_tasks)
-        completed = 0
-        for t in user_tasks:
-            if t.status == 'done':
-                completed = completed + 1
+        total, completed = stats_by_user.get(u.id, (0, 0))
         user_stats.append({
             'user_id': u.id,
             'user_name': u.name,

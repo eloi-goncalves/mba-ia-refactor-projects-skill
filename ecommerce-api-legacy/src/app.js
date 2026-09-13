@@ -1,14 +1,28 @@
 const express = require('express');
-const AppManager = require('./AppManager');
-const { config } = require('./utils');
 
-const app = express();
-app.use(express.json());
+const config = require('./config');
+const Database = require('./database/db');
+const { initDb } = require('./database/schema');
+const buildRoutes = require('./routes');
+const errorHandler = require('./middlewares/errorHandler');
+const logger = require('./utils/logger');
 
-const manager = new AppManager();
-manager.initDb();
-manager.setupRoutes(app);
+// Composition root: cria a conexão, inicializa o schema, monta o app e sobe o servidor.
+async function main() {
+  const db = new Database(config.dbPath);
+  await initDb(db);
 
-app.listen(config.port, () => {
-    console.log(`Frankenstein LMS rodando na porta ${config.port}...`);
+  const app = express();
+  app.use(express.json());
+  app.use('/', buildRoutes(db));
+  app.use(errorHandler);
+
+  app.listen(config.port, () => {
+    logger.info('LMS API rodando', { port: config.port });
+  });
+}
+
+main().catch((err) => {
+  logger.error('Falha ao iniciar a aplicação', { message: err.message });
+  process.exit(1);
 });
