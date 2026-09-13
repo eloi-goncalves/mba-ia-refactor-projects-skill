@@ -109,18 +109,51 @@ Analisar profundamente (ULTRATHINK) o prompt [00-prompt-orquestrador.md](00-prom
 
 **Checklist de Pronto da Fase 2:** ✅ SKILL.md com 3 fases; 5 áreas cobertas; ≥ 8 anti-patterns com severidade distribuída; APIs deprecated; ≥ 8 transformações antes/depois; Fase 2 pede confirmação; Fase 3 valida boot + endpoints.
 
-## 9. Próximos passos
+## 9. Execução da Fase 3 — Projeto 1 `code-smells-project` (2026-09-13)
 
-1. **Fases 0, 1 e 2 concluídas.** Próxima: **Fase 3 — Execução da Skill nos 3 projetos** ([docs/05-fase-3-execucao-nos-projetos.md](05-fase-3-execucao-nos-projetos.md)): rodar `claude "/refactor-arch"` em cada projeto, copiar a skill para P2 e P3, salvar `reports/audit-project-{1,2,3}.md` e commitar o código refatorado.
-2. **Resolver o `npm install` do Projeto 2** (rede/registry) antes de validar o boot do app Node.
-3. Na Fase 3, esperar **2–4 iterações** ajustando os arquivos de referência até bater os mínimos (≥ 5 findings, ≥ 1 CRITICAL/HIGH) em cada projeto.
-4. Preencher as seções **C/D** do README ao longo das Fases 3–4 e finalizar com a Fase 4 (entrega/push).
+**Status: concluída.** A skill foi executada seguindo o `SKILL.md` (equivalente a `claude "/refactor-arch"`), nas 3 fases.
 
-## 10. Sugestão de mensagem de commit (pt-BR, Conventional Commits)
+- **Fase 1 (Análise):** stack detectada = Python + Flask 3.1.1; domínio E-commerce; 4 arquivos; tabelas `produtos`, `usuarios`, `pedidos`, `itens_pedido`.
+- **Fase 2 (Auditoria):** relatório salvo em [reports/audit-project-1.md](../reports/audit-project-1.md) — **9 findings** (3 CRITICAL, 2 HIGH, 2 MEDIUM, 2 LOW). Pausa/confirmação registrada no relatório.
+- **Fase 3 (Refatoração):** monólito (`app.py`, `controllers.py`, `models.py`, `database.py`) reestruturado para MVC em `src/` (config, database, models, controllers, services, views, middlewares) + `app.py` como composition root.
+
+**Correções aplicadas (mapeadas ao playbook):**
+- T1 — `SECRET_KEY`/config via env (sem hardcoded; não mais exposta no `/health`).
+- T2 — todas as queries parametrizadas (fim do SQL Injection).
+- T13 — removidas as rotas perigosas `/admin/query` e `/admin/reset-db`.
+- T3/T6 — separação em camadas; conexão por requisição via `flask.g` (fim do singleton global).
+- T4/T5 — senhas com hash (`werkzeug`); `senha` nunca exposta em `/usuarios` nem `/login`.
+- T8 — N+1 de pedidos eliminado com `JOIN` + query única de itens.
+- T7/T11/T14 — notificações movidas para serviço; `print` → `logging`; error handler centralizado.
+
+**Validação (boot + endpoints):**
+
+| Endpoint | Resultado |
+|----------|-----------|
+| `GET /`, `GET /health` | ✅ ok (health não expõe segredo) |
+| `GET /produtos`, `/produtos/<id>`, `/produtos/busca` | ✅ ok |
+| `POST /login` (hash) + senha errada | ✅ 200 / 401 |
+| `POST /usuarios`, `POST /pedidos` | ✅ 201 |
+| `GET /pedidos` (com itens, sem N+1) | ✅ ok |
+| `PUT /pedidos/<id>/status`, `GET /relatorios/vendas` | ✅ ok |
+| `GET /usuarios` não expõe `senha` | ✅ confirmado |
+
+**Checklist de Pronto (Projeto 1):** ✅ estrutura MVC; config sem hardcoded; models; views/routes; controllers; error handling central; entry point; **app inicia sem erros**; **endpoints originais respondem**.
+
+> Critérios de aceite Projeto 1: A1 ✅ | A2 ✅ (9 ≥ 5) | A3 ✅ (3 CRITICAL) | A4 ✅.
+
+## 10. Próximos passos
+
+1. **Projeto 1 concluído e validado.** Próximo: **Fase 3 no Projeto 2** (`ecommerce-api-legacy`, Node/Express) — copiar a skill, executar, salvar `reports/audit-project-2.md`, refatorar e validar. **Bloqueio:** requer `npm install` (rede/proxy) para validar o boot.
+2. Depois: **Fase 3 no Projeto 3** (`task-manager-api`, Flask/SQLAlchemy) — copiar a skill, executar, salvar `reports/audit-project-3.md`, melhorar sem quebrar endpoints.
+3. **Fase 4:** preencher README seções **C/D**, checklist final e push do fork.
+
+## 11. Sugestão de mensagem de commit (pt-BR, Conventional Commits)
 
 ```
 docs(plano): gera documentos de fase 01–06 a partir do orquestrador refactor-arch
 chore(setup): cria pasta reports/ e prepara ambientes (Fase 0)
 docs(readme): adiciona seção Análise Manual com findings dos 3 projetos (Fase 1)
 feat(skill): cria skill refactor-arch com 3 fases e arquivos de referência (Fase 2)
+refactor(code-smells-project): reestrutura para padrão MVC e corrige findings (Fase 3)
 ```
