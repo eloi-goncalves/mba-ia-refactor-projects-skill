@@ -156,9 +156,9 @@ Analisar profundamente (ULTRATHINK) o prompt [00-prompt-orquestrador.md](00-prom
   - T9 — callbacks → wrapper Promise + async/await.
   - T8 — N+1 do relatório financeiro → consultas agregadas (JOIN/GROUP BY).
   - T12 — deleção de usuário transacional (sem órfãos).
-- **Validação:** `node --check` OK em **17/17** arquivos. **Boot + endpoints pendentes** por falta de `npm install` (rede/proxy). Ver [docs/08-pendencias.md](08-pendencias.md).
+- **Validação:** `node --check` OK em **17/17** arquivos. **Boot + endpoints validados** após `npm install` (2026-09-14): `POST /api/checkout` aprova cartão `4xxx` (200) e recusa `5xxx` (400); `GET /api/admin/financial-report` agrega receita por curso (sem N+1); `DELETE /api/users/:id` remove registros relacionados (sem órfãos). Cartão **mascarado** (`****1111`) nos logs.
 
-> Critérios Projeto 2: A1 ✅ | A2 ✅ (10 ≥ 5) | A3 ✅ (3 CRITICAL) | A4 ⏳ pendente (rede).
+> Critérios Projeto 2: A1 ✅ | A2 ✅ (10 ≥ 5) | A3 ✅ (3 CRITICAL) | A4 ✅.
 
 ## 11. Execução da Fase 3 — Projeto 3 `task-manager-api` (2026-09-13)
 
@@ -189,14 +189,16 @@ Analisar profundamente (ULTRATHINK) o prompt [00-prompt-orquestrador.md](00-prom
 | A1 — Fase 1 detecta stack | ✅ | ✅ | ✅ |
 | A2 — Fase 2 ≥ 5 findings | ✅ (9) | ✅ (10) | ✅ (8) |
 | A3 — ≥ 1 CRITICAL/HIGH | ✅ | ✅ | ✅ |
-| A4 — app funciona pós-refatoração | ✅ | ⏳ pendente (rede/npm) | ✅ |
+| A4 — app funciona pós-refatoração | ✅ | ✅ | ✅ |
+
+> **Todos os critérios de aceite atingidos em 3/3 projetos** (Projeto 2 validado em 2026-09-14 após `npm install`).
 
 ## 14. Próximos passos (o que faltou)
 
 Ver [docs/08-pendencias.md](08-pendencias.md). Resumo:
-1. **Validar boot do Projeto 2** após `npm install` (bloqueado por rede).
-2. **Push do fork** (`git push origin main`).
-3. Opcionais: rodar `claude "/refactor-arch"` de fato; screenshots; eliminar deprecations remanescentes do P3; testes.
+1. ~~Validar boot do Projeto 2~~ ✅ **concluído** (2026-09-14).
+2. ~~Push do fork~~ ✅ **concluído**.
+3. Opcionais: rodar `claude "/refactor-arch"` de fato para fidelidade ao CLI; screenshots; eliminar deprecations remanescentes do P3; testes automatizados.
 
 ## 11. Sugestão de mensagem de commit (pt-BR, Conventional Commits)
 

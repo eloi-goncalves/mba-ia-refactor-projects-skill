@@ -130,10 +130,10 @@ DEPOIS: + config/settings.py; hashing seguro; serializer no model (overdue/rela�
 | Fase 1 — linguagem/framework/domínio/arquivos corretos | ✅ | ✅ | ✅ |
 | Fase 2 — template, arquivo:linha, ordenado, ≥ 5 findings, deprecated, confirmação | ✅ | ✅ | ✅ |
 | Fase 3 — estrutura MVC, config sem hardcoded, models, views/rotas, controllers, erro central, entry point | ✅ | ✅ | ✅ |
-| Fase 3 — **aplicação inicia sem erros** | ✅ | ⏳ pendente (npm) | ✅ |
-| Fase 3 — **endpoints originais respondem** | ✅ | ⏳ pendente (npm) | ✅ |
+| Fase 3 — **aplicação inicia sem erros** | ✅ | ✅ | ✅ |
+| Fase 3 — **endpoints originais respondem** | ✅ | ✅ | ✅ |
 
-> **Projeto 2:** o código foi refatorado para MVC e passou na verificação de sintaxe (`node --check`) em 17/17 arquivos, mas a validação de **boot + endpoints** depende de `npm install` (bloqueado por rede no ambiente atual). Ver [docs/08-pendencias.md](docs/08-pendencias.md).
+> **Projeto 2:** refatorado para MVC, `node --check` em 17/17 arquivos e **boot + endpoints validados** após `npm install` (checkout aprovado/recusado, relatório financeiro sem N+1, deleção com integridade). O número do cartão aparece **mascarado** (`****1111`) nos logs.
 
 ### Logs das aplicações rodando (após refatoração)
 
@@ -148,6 +148,15 @@ DEPOIS: + config/settings.py; hashing seguro; serializer no model (overdue/rela�
 [{"id":1,"title":"Primeira task","overdue":true,"user_name":"Joao","category_name":"Backend", ...}]
 ```
 `GET /users` não expõe `password`; `GET /reports/summary` responde com estatísticas agregadas.
+
+**Projeto 2** — boot e endpoints (após `npm install`):
+```json
+{"level":"info","message":"LMS API rodando","meta":{"port":3000}}
+// POST /api/checkout (cartão 4xxx) -> {"msg":"Sucesso","enrollment_id":2}
+// POST /api/checkout (cartão 5xxx) -> {"error":"Pagamento recusado"}
+// log: "Checkout concluído" meta.card = "****1111" (PAN mascarado)
+```
+`GET /api/admin/financial-report` retorna receita por curso (consultas agregadas, sem N+1); `DELETE /api/users/:id` remove registros relacionados (sem órfãos).
 
 ### Observações sobre stacks diferentes
 
