@@ -2,8 +2,8 @@ from flask import Blueprint, request, jsonify
 from database import db
 from models.user import User
 from models.task import Task
-from datetime import datetime
-import hashlib, json, re
+from utils.helpers import utcnow
+import json, re
 
 user_bp = Blueprint('users', __name__)
 
@@ -26,7 +26,7 @@ def get_users():
 
 @user_bp.route('/users/<int:user_id>', methods=['GET'])
 def get_user(user_id):
-    user = User.query.get(user_id)
+    user = db.session.get(User, user_id)
     if not user:
         return jsonify({'error': 'Usuário não encontrado'}), 404
 
@@ -91,7 +91,7 @@ def create_user():
 
 @user_bp.route('/users/<int:user_id>', methods=['PUT'])
 def update_user(user_id):
-    user = User.query.get(user_id)
+    user = db.session.get(User, user_id)
     if not user:
         return jsonify({'error': 'Usuário não encontrado'}), 404
 
@@ -127,13 +127,13 @@ def update_user(user_id):
     try:
         db.session.commit()
         return jsonify(user.to_dict()), 200
-    except:
+    except Exception:
         db.session.rollback()
         return jsonify({'error': 'Erro ao atualizar'}), 500
 
 @user_bp.route('/users/<int:user_id>', methods=['DELETE'])
 def delete_user(user_id):
-    user = User.query.get(user_id)
+    user = db.session.get(User, user_id)
     if not user:
         return jsonify({'error': 'Usuário não encontrado'}), 404
 
@@ -146,13 +146,13 @@ def delete_user(user_id):
         db.session.commit()
         print(f"Usuário deletado: {user_id}")
         return jsonify({'message': 'Usuário deletado com sucesso'}), 200
-    except:
+    except Exception:
         db.session.rollback()
         return jsonify({'error': 'Erro ao deletar'}), 500
 
 @user_bp.route('/users/<int:user_id>/tasks', methods=['GET'])
 def get_user_tasks(user_id):
-    user = User.query.get(user_id)
+    user = db.session.get(User, user_id)
     if not user:
         return jsonify({'error': 'Usuário não encontrado'}), 404
 
@@ -169,7 +169,7 @@ def get_user_tasks(user_id):
         task_data['due_date'] = str(t.due_date) if t.due_date else None
 
         if t.due_date:
-            if t.due_date < datetime.utcnow():
+            if t.due_date < utcnow():
                 if t.status != 'done' and t.status != 'cancelled':
                     task_data['overdue'] = True
                 else:

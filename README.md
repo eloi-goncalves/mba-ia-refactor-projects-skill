@@ -163,6 +163,18 @@ DEPOIS: + config/settings.py; hashing seguro; serializer no model (overdue/rela�
 - **Mesma skill, transformações adaptadas:** no monólito Flask (P1) a skill criou todas as camadas do zero; no Express (P2) quebrou a God Class e trocou callbacks por async/await; no Flask/SQLAlchemy já organizado (P3) fez melhorias cirúrgicas (segurança, N+1, serializer) sem reescrever.
 - **Agnosticismo confirmado:** detecção de stack e catálogo/playbook funcionaram nas 3 bases com níveis de organização distintos.
 
+### Testes automatizados
+
+Cada projeto tem uma suíte de testes que exercita a refatoração:
+
+| Projeto | Testes | Como rodar |
+|---------|--------|------------|
+| 1 — `code-smells-project` | 6 (pytest) — health, produtos, login/hash, senha não exposta, SQL Injection, CRUD | `cd code-smells-project && .venv/bin/python -m pytest -q` |
+| 2 — `ecommerce-api-legacy` | 3 (`node --test`) — scrypt hash/verify, autorização de pagamento, máscara de cartão | `cd ecommerce-api-legacy && npm test` |
+| 3 — `task-manager-api` | 5 (pytest) — health, senha não exposta, login/hash, overdue, relatório | `cd task-manager-api && .venv/bin/python -m pytest -q` |
+
+Todas as suítes passam (P1: 6/6, P2: 3/3, P3: 5/5).
+
 ## D) Como Executar
 
 ### Pré-requisitos

@@ -1,5 +1,5 @@
 from database import db
-from datetime import datetime
+from utils.helpers import utcnow
 from werkzeug.security import check_password_hash, generate_password_hash
 
 class User(db.Model):
@@ -11,7 +11,7 @@ class User(db.Model):
     password = db.Column(db.String(255), nullable=False)
     role = db.Column(db.String(50), default='user')
     active = db.Column(db.Boolean, default=True)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=utcnow)
 
     def to_dict(self):
         # A senha (hash) nunca é exposta na serialização.

@@ -1,10 +1,15 @@
-from datetime import datetime
+from datetime import datetime, timezone
 import re
 import os
 import json
 import sys
 import math
 import hashlib
+
+
+def utcnow():
+    # Equivalente naive a datetime.utcnow(), sem a API deprecated (Python 3.12+).
+    return datetime.now(timezone.utc).replace(tzinfo=None)
 
 def format_date(date_obj):
     if date_obj:
@@ -35,7 +40,7 @@ def generate_id():
 
 def log_action(action, details=None):
 
-    timestamp = datetime.utcnow()
+    timestamp = utcnow()
     print(f"[{timestamp}] ACTION: {action}")
     if details:
         print(f"  DETAILS: {details}")
@@ -43,10 +48,10 @@ def log_action(action, details=None):
 def parse_date(date_string):
     try:
         return datetime.strptime(date_string, '%Y-%m-%d')
-    except:
+    except ValueError:
         try:
             return datetime.strptime(date_string, '%d/%m/%Y')
-        except:
+        except ValueError:
             return None
 
 def is_valid_color(color):
@@ -85,7 +90,7 @@ def process_task_data(data, existing_task=None):
                 result['priority'] = p
             else:
                 return None, 'Prioridade deve ser entre 1 e 5'
-        except:
+        except (ValueError, TypeError):
             return None, 'Prioridade inválida'
 
     if 'due_date' in data:

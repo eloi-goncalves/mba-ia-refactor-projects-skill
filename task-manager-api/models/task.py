@@ -1,11 +1,6 @@
 from database import db
-from datetime import datetime, timezone
+from utils.helpers import utcnow
 import json
-
-
-def _utcnow():
-    # utcnow() naive equivalente, sem a API deprecated datetime.utcnow().
-    return datetime.now(timezone.utc).replace(tzinfo=None)
 
 class Task(db.Model):
     __tablename__ = 'tasks'
@@ -17,8 +12,8 @@ class Task(db.Model):
     priority = db.Column(db.Integer, default=3)
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True)
     category_id = db.Column(db.Integer, db.ForeignKey('categories.id'), nullable=True)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=utcnow)
+    updated_at = db.Column(db.DateTime, default=utcnow, onupdate=utcnow)
     due_date = db.Column(db.DateTime, nullable=True)
     tags = db.Column(db.String(500), nullable=True)
 
@@ -59,4 +54,4 @@ class Task(db.Model):
     def is_overdue(self):
         if not self.due_date:
             return False
-        return self.due_date < _utcnow() and self.status not in ('done', 'cancelled')
+        return self.due_date < utcnow() and self.status not in ('done', 'cancelled')

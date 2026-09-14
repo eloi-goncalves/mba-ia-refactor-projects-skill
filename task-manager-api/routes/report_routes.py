@@ -3,8 +3,8 @@ from database import db
 from models.task import Task
 from models.user import User
 from models.category import Category
-from datetime import datetime, timedelta
-from utils.helpers import format_date, calculate_percentage
+from datetime import timedelta
+from utils.helpers import format_date, calculate_percentage, utcnow
 import json
 
 report_bp = Blueprint('reports', __name__)
@@ -32,17 +32,17 @@ def summary_report():
     overdue_list = []
     for t in all_tasks:
         if t.due_date:
-            if t.due_date < datetime.utcnow():
+            if t.due_date < utcnow():
                 if t.status != 'done' and t.status != 'cancelled':
                     overdue_count = overdue_count + 1
                     overdue_list.append({
                         'id': t.id,
                         'title': t.title,
                         'due_date': str(t.due_date),
-                        'days_overdue': (datetime.utcnow() - t.due_date).days
+                        'days_overdue': (utcnow() - t.due_date).days
                     })
 
-    seven_days_ago = datetime.utcnow() - timedelta(days=7)
+    seven_days_ago = utcnow() - timedelta(days=7)
     recent_tasks = Task.query.filter(Task.created_at >= seven_days_ago).count()
 
     recent_done = Task.query.filter(
@@ -73,7 +73,7 @@ def summary_report():
         })
 
     report = {
-        'generated_at': str(datetime.utcnow()),
+        'generated_at': str(utcnow()),
         'overview': {
             'total_tasks': total_tasks,
             'total_users': total_users,
@@ -107,7 +107,7 @@ def summary_report():
 
 @report_bp.route('/reports/user/<int:user_id>', methods=['GET'])
 def user_report(user_id):
-    user = User.query.get(user_id)
+    user = db.session.get(User, user_id)
     if not user:
         return jsonify({'error': 'Usuário não encontrado'}), 404
 
@@ -135,7 +135,7 @@ def user_report(user_id):
             high_priority = high_priority + 1
 
         if t.due_date:
-            if t.due_date < datetime.utcnow():
+            if t.due_date < utcnow():
                 if t.status != 'done' and t.status != 'cancelled':
                     overdue = overdue + 1
 
@@ -188,13 +188,13 @@ def create_category():
         db.session.add(category)
         db.session.commit()
         return jsonify(category.to_dict()), 201
-    except:
+    except Exception:
         db.session.rollback()
         return jsonify({'error': 'Erro ao criar categoria'}), 500
 
 @report_bp.route('/categories/<int:cat_id>', methods=['PUT'])
 def update_category(cat_id):
-    cat = Category.query.get(cat_id)
+    cat = db.session.get(Category, cat_id)
     if not cat:
         return jsonify({'error': 'Categoria não encontrada'}), 404
 
@@ -209,13 +209,13 @@ def update_category(cat_id):
     try:
         db.session.commit()
         return jsonify(cat.to_dict()), 200
-    except:
+    except Exception:
         db.session.rollback()
         return jsonify({'error': 'Erro ao atualizar'}), 500
 
 @report_bp.route('/categories/<int:cat_id>', methods=['DELETE'])
 def delete_category(cat_id):
-    cat = Category.query.get(cat_id)
+    cat = db.session.get(Category, cat_id)
     if not cat:
         return jsonify({'error': 'Categoria não encontrada'}), 404
 
@@ -223,6 +223,6 @@ def delete_category(cat_id):
         db.session.delete(cat)
         db.session.commit()
         return jsonify({'message': 'Categoria deletada'}), 200
-    except:
+    except Exception:
         db.session.rollback()
         return jsonify({'error': 'Erro ao deletar'}), 500
